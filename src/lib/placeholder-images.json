@@ -1,3 +1,76 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero",
+      "description": "Abstract representation of AI and conversation",
+      "imageUrl": "https://images.unsplash.com/photo-1510906594845-bc082582c8cc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMHRlY2hub2xvZ3l8ZW58MHx8fHwxNzYyNTM4NjE0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "abstract technology"
+    },
+    {
+      "id": "feature-pill",
+      "description": "Close-up of a futuristic interface element",
+      "imageUrl": "https://images.unsplash.com/photo-1720962158883-b0f2021fb51e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxmdXR1cmlzdGljJTIwaW50ZXJmYWNlfGVufDB8fHx8MTc2MjUyMDkxN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "futuristic interface"
+    },
+    {
+      "id": "market-business",
+      "description": "Modern office setting with people collaborating",
+      "imageUrl": "https://images.unsplash.com/photo-1657978837950-03646a7c7b9e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtb2Rlcm4lMjBvZmZpY2V8ZW58MHx8fHwxNzYyNTI3Mzg2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern office"
+    },
+    {
+      "id": "market-creative",
+      "description": "Artist's desk with digital tablet and colors",
+      "imageUrl": "https://images.unsplash.com/photo-1636485042948-615bfefb16b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxhcnQlMjBkZXNrfGVufDB8fHx8MTc2MjYxNTMwMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "art desk"
+    },
+    {
+      "id": "market-productivity",
+      "description": "Clean workspace with a laptop and notebook",
+      "imageUrl": "https://images.unsplash.com/photo-1624341649976-45b5d481c244?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjbGVhbiUyMHdvcmtzcGFjZXxlbnwwfHx8fDE3NjI2MTUzMDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "clean workspace"
+    },
+    {
+      "id": "market-education",
+      "description": "A stack of books next to a glowing screen",
+      "imageUrl": "https://images.unsplash.com/photo-1606666783578-146f2181535e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxib29rcyUyMHNjcmVlbnxlbnwwfHx8fDE3NjI2MTUzMDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "books screen"
+    },
+    {
+      "id": "item-logo",
+      "description": "Collection of modern logos",
+      "imageUrl": "https://images.unsplash.com/photo-1631173380092-075835af8355?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxsb2dvJTIwY29sbGVjdGlvbnxlbnwwfHx8fDE3NjI2MTUzMDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "logo collection"
+    },
+    {
+      "id": "item-plan",
+      "description": "A person writing a business plan on a whiteboard",
+      "imageUrl": "https://images.unsplash.com/photo-1598520106804-d05d4a743915?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YnVzaW5lc3MlMjB3aGl0ZWJvYXJkfGVufDB8fHx8MTc2MjYxNTMwMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "business whiteboard"
+    },
+    {
+      "id": "item-music",
+      "description": "Headphones resting on a laptop",
+      "imageUrl": "https://images.unsplash.com/photo-1620620153794-8bb473687c76?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxoZWFkcGhvbmVzJTIwbGFwdG9wfGVufDB8fHx8MTc2MjYxNTMwMHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "headphones laptop"
+    },
+    {
+      "id": "item-course",
+      "description": "Online class on a tablet",
+      "imageUrl": "https://images.unsplash.com/photo-1585974738771-84483dd9f89f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxvbmxpbmUlMjBjbGFzc3xlbnwwfHx8fDE3NjI1MzAxMTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "online class"
+    },
+    {
+      "id": "item-social",
+      "description": "Smartphone showing a social media feed",
+      "imageUrl": "https://images.unsplash.com/photo-1600096194534-95cf5ece04cf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzb2NpYWwlMjBtZWRpYXxlbnwwfHx8fDE3NjI1NDE1Njd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "social media"
+    },
+    {
+      "id": "item-analysis",
+      "description": "Screen with complex charts and graphs",
+      "imageUrl": "https://images.unsplash.com/photo-1762279389020-eeeb69c25813?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxkYXRhJTIwY2hhcnRzfGVufDB8fHx8MTc2MjQ5MzA5MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "data charts"
+    }
+  ]
 }
