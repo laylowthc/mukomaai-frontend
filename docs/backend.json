@@ -1,0 +1,234 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the MukomaAI application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user.",
+          "format": "uuid"
+        },
+        "name": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user account was created.",
+          "format": "date-time"
+        },
+        "defaultPersonaId": {
+          "type": "string",
+          "description": "Reference to Persona. The user's default persona. (Relationship: User 1:1 Persona)"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "email",
+        "createdAt"
+      ]
+    },
+    "Chat": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Chat",
+      "type": "object",
+      "description": "Represents a single chat session for a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the chat session."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. The ID of the user who owns this chat session. (Relationship: User 1:N Chat)"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the chat session was created.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "createdAt"
+      ]
+    },
+    "Message": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Message",
+      "type": "object",
+      "description": "Represents a single message within a chat session.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the message."
+        },
+        "chatId": {
+          "type": "string",
+          "description": "Reference to Chat. The ID of the chat session this message belongs to. (Relationship: Chat 1:N Message)"
+        },
+        "role": {
+          "type": "string",
+          "description": "The role of the message sender (e.g., 'user', 'assistant')."
+        },
+        "text": {
+          "type": "string",
+          "description": "The content of the message."
+        },
+        "language": {
+          "type": "string",
+          "description": "The language of the message (e.g., 'Shona', 'English', 'Ndebele')."
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp indicating when the message was sent.",
+          "format": "date-time"
+        },
+        "personaId": {
+          "type": "string",
+          "description": "Reference to Persona. The ID of the persona used for the assistant's response, if applicable. (Relationship: Persona 1:N Message)"
+        }
+      },
+      "required": [
+        "id",
+        "chatId",
+        "role",
+        "text",
+        "language",
+        "timestamp"
+      ]
+    },
+    "Persona": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Persona",
+      "type": "object",
+      "description": "Represents an AI persona with specific characteristics.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the persona."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the persona (e.g., 'Mukoma', 'Muzukuru')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the persona's characteristics."
+        },
+        "tone": {
+          "type": "string",
+          "description": "The persona's tone or personality."
+        },
+        "systemPromptTemplate": {
+          "type": "string",
+          "description": "The system prompt template used to guide the AI's responses when using this persona."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "tone",
+        "systemPromptTemplate"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profiles. Includes the user's name, email, creation timestamp and default persona.  Path-based ownership ensures only the authenticated user can access and modify their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/chats/{chatId}",
+        "definition": {
+          "entityName": "Chat",
+          "schema": {
+            "$ref": "#/backend/entities/Chat"
+          },
+          "description": "Stores chat sessions for a specific user. Path-based ownership ensures only the authenticated user can access and manage their own chat sessions.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "chatId",
+              "description": "The unique identifier of the chat session."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/chats/{chatId}/messages/{messageId}",
+        "definition": {
+          "entityName": "Message",
+          "schema": {
+            "$ref": "#/backend/entities/Message"
+          },
+          "description": "Stores messages within a specific chat session. Path-based ownership (via parent chat and user) ensures only the authenticated user can access messages within their own chat sessions.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user."
+            },
+            {
+              "name": "chatId",
+              "description": "The unique identifier of the chat session."
+            },
+            {
+              "name": "messageId",
+              "description": "The unique identifier of the message."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/personas/{personaId}",
+        "definition": {
+          "entityName": "Persona",
+          "schema": {
+            "$ref": "#/backend/entities/Persona"
+          },
+          "description": "Stores AI persona definitions. All users can access all personas.",
+          "params": [
+            {
+              "name": "personaId",
+              "description": "The unique identifier of the persona."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to ensure authorization independence, clarity, and scalability for the MukomaAI application. It leverages path-based ownership for user-specific data (chats and messages) and segregates data based on access requirements.  The key to authorization independence is the direct association of chats and messages to a user via path-based ownership, avoiding the need for complex `get()` calls in security rules. QAPs are supported through structural segregation; each collection clearly defines the scope of access, allowing for simple and secure `list` operations based on the authenticated user. The structure explicitly supports the integrity of data ownership, timestamps, and denormalized authorization data, adhering to all core design principles.\n\nSpecifically:\n\n*   `/users/{userId}`: Stores user profiles, enabling user-specific settings and profile information.\n*   `/users/{userId}/chats/{chatId}`:  Stores chat sessions owned by a specific user. This path-based ownership enables efficient and secure access control, as the `userId` in the path directly links the chat to the user, eliminating the need for complex rule logic to determine ownership.\n*   `/users/{userId}/chats/{chatId}/messages/{messageId}`: Stores messages within a specific chat session. Similar to chats, messages inherit authorization from the parent `chatId` and `userId`, guaranteeing that only the owner can manage the data.  The timestamp is explicitly stored to ensure chronological ordering and the role to easily identify the participants.\n*   `/personas/{personaId}`: Stores the definitions of AI personas available in the application.  Since all users can access all personas, this collection is separate from user-specific data, reducing complexity.\n\nThis design allows for atomic operations (transactions/batches) when creating chats or messages because authorization doesn't depend on reading data from other documents.  It also supports clear and maintainable security rules, as access control is primarily based on path matching and direct user ownership."
+  }
+}
