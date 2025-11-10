@@ -19,7 +19,6 @@ const useNewChatRedirect = (chatId: string) => {
       const newChatId = uuidv4();
       const chatRef = doc(firestore, 'users', user.uid, 'chats', newChatId);
       
-      // Use a then() to handle successful navigation, errors are caught by the non-blocking helper
       setDocumentNonBlocking(chatRef, { 
         createdAt: new Date(),
         id: newChatId,
@@ -28,7 +27,6 @@ const useNewChatRedirect = (chatId: string) => {
         summary: "New Chat"
       }, { merge: true });
       
-      // We can optimistically navigate
       router.replace(`/chat/${newChatId}`);
     }
   }, [chatId, user, router, firestore]);
@@ -37,8 +35,7 @@ const useNewChatRedirect = (chatId: string) => {
 };
 
 
-export default function ChatPage({ params }: { params: { chatId: string } }) {
-  const { chatId } = params;
+export default function ChatPage({ params: { chatId } }: { params: { chatId: string } }) {
   const isRedirecting = useNewChatRedirect(chatId);
 
   if (isRedirecting || !chatId || chatId === 'new') {
