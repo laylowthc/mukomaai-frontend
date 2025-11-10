@@ -2,10 +2,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
 import { personaBasedAIChat } from '@/ai/flows/persona-based-ai-chat';
 import { summarizeChatHistory } from '@/ai/flows/summarize-chat-history';
-import { collection, doc, updateDoc, arrayUnion, serverTimestamp, getDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, arrayUnion, serverTimestamp, getDoc, Timestamp } from 'firebase/firestore';
 import type { ChatMessage, UserSettings } from '@/lib/types';
 import { personas } from '@/lib/personas';
 import { Button } from '@/components/ui/button';
@@ -94,13 +94,20 @@ export function ChatView({ chatId }: { chatId: string }) {
       role: 'user',
       text: text,
       language: selectedLanguage,
-      timestamp: serverTimestamp() as any, // Cast for local state before server conversion
+      timestamp: new Date(), // Use JS Date for optimistic update
     };
     
     // Optimistically update UI
     setMessages(currentMessages => [...currentMessages, userMessage]);
+    
+    // Prepare data for Firestore with serverTimestamp
+    const userMessageForFirestore = {
+      ...userMessage,
+      timestamp: serverTimestamp(),
+    };
+
     updateDocumentNonBlocking(chatDocRef, {
-      messages: arrayUnion(userMessage),
+      messages: arrayUnion(userMessageForFirestore),
     });
     
     try {
@@ -111,20 +118,24 @@ export function ChatView({ chatId }: { chatId: string }) {
         language: selectedLanguage,
       });
 
-      const assistantMessage: ChatMessage = {
-        role: 'assistant',
+      const assistantMessageForFirestore = {
+        role: 'assistant' as const,
         text: response.response,
         persona: selectedPersona,
         language: selectedLanguage,
-        timestamp: serverTimestamp() as any,
+        timestamp: serverTimestamp(),
       };
 
       updateDocumentNonBlocking(chatDocRef, {
-        messages: arrayUnion(assistantMessage),
+        messages: arrayUnion(assistantMessageForFirestore),
       });
 
       // Optimistically update for summary
-      const updatedMessages = [...messages, userMessage, assistantMessage];
+      const assistantMessageForUI = {
+        ...assistantMessageForFirestore,
+        timestamp: new Date(), // Use JS Date for UI
+      };
+      const updatedMessages = [...messages, userMessage, assistantMessageForUI];
       if (updatedMessages.length > 2 && updatedMessages.length % 5 === 0) {
         // We don't need to wait for this background task
         summarizeAndUpdate();
@@ -151,11 +162,11 @@ export function ChatView({ chatId }: { chatId: string }) {
     const currentMessages = currentDoc.data()?.messages || [];
     
     if (currentMessages.length > 2) {
-      const chatHistoryForSummary = currentMessages.map((m: ChatMessage) => ({
+      const chatHistoryForSummary = currentMessages.map((m: any) => ({ // Use 'any' to handle both server and client timestamps
         role: m.role,
         text: m.text,
         language: m.language,
-        timestamp: m.timestamp?.toMillis() || Date.now(),
+        timestamp: m.timestamp?.toMillis ? m.timestamp.toMillis() : (m.timestamp instanceof Date ? m.timestamp.getTime() : Date.now()),
       }));
 
       try {

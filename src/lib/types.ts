@@ -17,7 +17,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   language: 'Shona' | 'English' | 'Ndebele';
-  timestamp: Timestamp;
+  timestamp: Timestamp | Date; // Allow Date for optimistic updates
   persona?: string;
 }
 
