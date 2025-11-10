@@ -1,26 +1,23 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { v4 as uuidv4 } from 'uuid';
 import { ChatView } from '@/components/chat/chat-view';
 import { Bot } from 'lucide-react';
 
-// This is a client-side workaround to generate a new chat ID and redirect.
-// In a real-world scenario, this might be handled by a server action.
 const useNewChatRedirect = (chatId: string) => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useUser();
+  const firestore = useFirestore();
 
   useEffect(() => {
-    if (chatId === 'new' && user) {
+    if (chatId === 'new' && user && firestore) {
       const newChatId = uuidv4();
-      const chatRef = doc(db, 'users', user.uid, 'chats', newChatId);
+      const chatRef = doc(firestore, 'users', user.uid, 'chats', newChatId);
       
-      // We create an empty chat document to make it appear in the sidebar
       setDoc(chatRef, { 
         createdAt: new Date(),
         id: newChatId,
@@ -30,7 +27,7 @@ const useNewChatRedirect = (chatId: string) => {
         router.replace(`/chat/${newChatId}`);
       });
     }
-  }, [chatId, user, router]);
+  }, [chatId, user, router, firestore]);
 
   return chatId === 'new';
 };

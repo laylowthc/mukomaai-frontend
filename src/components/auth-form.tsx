@@ -12,8 +12,8 @@ import {
   updateProfile,
   signInAnonymously,
 } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc, serverTimestamp } from 'firebase/firestore';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -37,6 +37,9 @@ const signInSchema = z.object({
 
 export function AuthForm() {
   const [loading, setLoading] = useState(false);
+  const auth = useAuth();
+  const firestore = useFirestore();
+
 
   const signUpForm = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
@@ -54,11 +57,12 @@ export function AuthForm() {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       await updateProfile(userCredential.user, { displayName: values.name });
       
-      const userDocRef = doc(db, 'users', userCredential.user.uid);
+      if (!firestore) throw new Error("Firestore not available");
+      const userDocRef = doc(firestore, 'users', userCredential.user.uid);
       
       const defaultSettings = await generateDefaultProfileSettings({});
       
-      await setDoc(userDocRef, {
+      setDocumentNonBlocking(userDocRef, {
         uid: userCredential.user.uid,
         displayName: values.name,
         email: values.email,
@@ -66,7 +70,7 @@ export function AuthForm() {
         theme: defaultSettings.theme,
         language: defaultSettings.language,
         defaultPersona: defaultSettings.defaultPersona,
-      });
+      }, {});
 
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Sign-up failed', description: error.message });
@@ -91,10 +95,11 @@ export function AuthForm() {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
-      const userDocRef = doc(db, 'users', user.uid);
+      if (!firestore) throw new Error("Firestore not available");
+      const userDocRef = doc(firestore, 'users', user.uid);
       const defaultSettings = await generateDefaultProfileSettings({});
 
-      await setDoc(userDocRef, {
+      setDocumentNonBlocking(userDocRef, {
         uid: user.uid,
         displayName: user.displayName,
         email: user.email,
@@ -116,10 +121,11 @@ export function AuthForm() {
     try {
       const userCredential = await signInAnonymously(auth);
       const user = userCredential.user;
-      const userDocRef = doc(db, 'users', user.uid);
+      if (!firestore) throw new Error("Firestore not available");
+      const userDocRef = doc(firestore, 'users', user.uid);
       const defaultSettings = await generateDefaultProfileSettings({});
 
-      await setDoc(userDocRef, {
+      setDocumentNonBlocking(userDocRef, {
         uid: user.uid,
         displayName: "Guest User",
         isAnonymous: true,

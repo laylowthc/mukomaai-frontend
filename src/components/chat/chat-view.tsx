@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/hooks/use-auth';
-import { db } from '@/lib/firebase';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useUser, useFirestore, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { personaBasedAIChat } from '@/ai/flows/persona-based-ai-chat';
 import { summarizeChatHistory } from '@/ai/flows/summarize-chat-history';
-import { collection, doc, onSnapshot, updateDoc, arrayUnion, serverTimestamp, getDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, arrayUnion, serverTimestamp, getDoc } from 'firebase/firestore';
 import type { ChatMessage, UserSettings } from '@/lib/types';
 import { personas } from '@/lib/personas';
 import { Button } from '@/components/ui/button';
@@ -20,54 +19,58 @@ import Link from 'next/link';
 const GUEST_MESSAGE_LIMIT = 5;
 
 export function ChatView({ chatId }: { chatId: string }) {
-  const { user } = useAuth();
+  const { user } = useUser();
+  const firestore = useFirestore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const [chatLoading, setChatLoading] = useState(true);
+  
   const [settings, setSettings] = useState<UserSettings>({ language: 'Shona', defaultPersona: 'Mukoma' });
   
   const [selectedPersona, setSelectedPersona] = useState(settings.defaultPersona);
   const [selectedLanguage, setSelectedLanguage] = useState(settings.language);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  
+
   const isGuest = user?.isAnonymous;
   const userMessagesCount = messages.filter(m => m.role === 'user').length;
   const isMessageLimitReached = isGuest && userMessagesCount >= GUEST_MESSAGE_LIMIT;
 
+  const chatDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid, 'chats', chatId);
+  }, [user, firestore, chatId]);
+
+  const { data: chatDoc, isLoading: chatLoading } = useDoc<{messages: ChatMessage[]}>(chatDocRef);
 
   useEffect(() => {
-    if (user) {
-      const fetchSettings = async () => {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-          const data = userDocSnap.data() as UserSettings;
-          setSettings(data);
-          setSelectedPersona(data.defaultPersona);
-          setSelectedLanguage(data.language);
-        }
-      };
-      fetchSettings();
+    if (chatDoc?.messages) {
+      setMessages(chatDoc.messages.sort((a, b) => a.timestamp?.toMillis() - b.timestamp?.toMillis()));
+    } else {
+      setMessages([]);
     }
-  }, [user]);
+  }, [chatDoc]);
+
+  const userSettingsDocRef = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+
+  const { data: userSettingsDoc } = useDoc<UserSettings>(userSettingsDocRef);
 
   useEffect(() => {
-    if (!user) return;
-    setChatLoading(true);
-    const unsub = onSnapshot(doc(db, 'users', user.uid, 'chats', chatId), (doc) => {
-      if (doc.exists()) {
-        const data = doc.data();
-        setMessages((data.messages || []).sort((a: ChatMessage, b: ChatMessage) => a.timestamp?.toMillis() - b.timestamp?.toMillis()));
-      }
-      setChatLoading(false);
-    });
-    return () => unsub();
-  }, [chatId, user]);
+    if (userSettingsDoc) {
+        const data = userSettingsDoc;
+        setSettings(data);
+        if (chatId === 'new') {
+            setSelectedPersona(data.defaultPersona);
+            setSelectedLanguage(data.language);
+        }
+    }
+  }, [userSettingsDoc, chatId]);
+
   
   useEffect(() => {
-      // Auto-scroll to bottom
       if (scrollAreaRef.current) {
           const viewport = scrollAreaRef.current.querySelector('div[data-radix-scroll-area-viewport]');
           if(viewport) {
@@ -79,7 +82,7 @@ export function ChatView({ chatId }: { chatId: string }) {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user || loading || isMessageLimitReached) return;
+    if (!newMessage.trim() || !user || loading || isMessageLimitReached || !chatDocRef) return;
 
     setLoading(true);
 
@@ -87,11 +90,10 @@ export function ChatView({ chatId }: { chatId: string }) {
       role: 'user',
       text: newMessage,
       language: selectedLanguage,
-      timestamp: serverTimestamp() as any, // Let server set the timestamp
+      timestamp: serverTimestamp() as any,
     };
     
     setNewMessage('');
-    const chatDocRef = doc(db, 'users', user.uid, 'chats', chatId);
     await updateDoc(chatDocRef, {
       messages: arrayUnion(userMessage),
     });
@@ -116,9 +118,8 @@ export function ChatView({ chatId }: { chatId: string }) {
         messages: arrayUnion(assistantMessage),
       });
 
-      // Update chat summary in background
       const updatedMessages = [...messages, userMessage, assistantMessage];
-      if (updatedMessages.length > 2 && updatedMessages.length % 5 === 0) { // Update summary every 5 messages
+      if (updatedMessages.length > 2 && updatedMessages.length % 5 === 0) {
         const chatHistoryForSummary = updatedMessages.map(m => ({...m, text: m.text, timestamp: Date.now()}));
         summarizeChatHistory({ chatHistory: chatHistoryForSummary as any }).then(({ summary }) => {
           updateDoc(chatDocRef, { summary });

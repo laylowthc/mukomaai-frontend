@@ -5,14 +5,14 @@ import type { ChatMessage } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bot, User } from 'lucide-react';
 import { personas } from '@/lib/personas';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/firebase';
 
 interface MessageBubbleProps {
   message: Partial<ChatMessage>;
 }
 
 export function MessageBubble({ message }: MessageBubbleProps) {
-  const { user: authUser } = useAuth();
+  const { user: authUser } = useUser();
   const isUser = message.role === 'user';
   const persona = message.persona ? personas.find(p => p.id === message.persona) : null;
   const personaImage = persona?.avatarUrl;

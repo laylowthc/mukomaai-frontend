@@ -7,9 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { personas } from '@/lib/personas';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useDoc, useFirestore, setDocumentNonBlocking, useMemoFirebase } from '@/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 import { User } from 'lucide-react';
@@ -22,34 +21,32 @@ type UserSettings = {
 
 export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
-    const { user } = useAuth();
+    const { user } = useUser();
+    const firestore = useFirestore();
     const [settings, setSettings] = useState<UserSettings>({ language: 'Shona', defaultPersona: 'Mukoma' });
     const [loading, setLoading] = useState(true);
     const isGuest = user?.isAnonymous;
+
+    const userDocRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return doc(firestore, 'users', user.uid);
+    }, [user, firestore]);
+
+    const { data: userDoc, isLoading: userDocLoading } = useDoc<UserSettings>(userDocRef);
     
     useEffect(() => {
-        if (user) {
-            const fetchSettings = async () => {
-                setLoading(true);
-                const userDocRef = doc(db, 'users', user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-                if (userDocSnap.exists()) {
-                    const data = userDocSnap.data();
-                    setSettings({
-                        language: data.language || 'Shona',
-                        defaultPersona: data.defaultPersona || 'Mukoma',
-                    });
-                }
-                setLoading(false);
-            };
-            fetchSettings();
+        if (userDoc) {
+            setSettings({
+                language: userDoc.language || 'Shona',
+                defaultPersona: userDoc.defaultPersona || 'Mukoma',
+            });
         }
-    }, [user]);
+        setLoading(userDocLoading);
+    }, [userDoc, userDocLoading]);
 
     const handleSave = async () => {
-        if (!user) return;
-        const userDocRef = doc(db, 'users', user.uid);
-        await setDoc(userDocRef, { ...settings }, { merge: true });
+        if (!userDocRef) return;
+        setDocumentNonBlocking(userDocRef, { ...settings }, { merge: true });
         toast({
             title: "Settings Saved",
             description: "Your preferences have been updated.",

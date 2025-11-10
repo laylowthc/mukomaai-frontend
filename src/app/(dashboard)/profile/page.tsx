@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/hooks/use-auth';
+import { useUser, useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,15 +9,15 @@ import { Label } from '@/components/ui/label';
 import { User as UserIcon } from 'lucide-react';
 import { useState } from 'react';
 import { updateProfile } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { doc } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
-import { auth } from '@/lib/firebase';
 import Link from 'next/link';
 
 
 export default function ProfilePage() {
-    const { user } = useAuth();
+    const { user } = useUser();
+    const auth = useAuth();
+    const firestore = useFirestore();
     const [displayName, setDisplayName] = useState(user?.displayName ?? '');
     const [loading, setLoading] = useState(false);
     const isGuest = user?.isAnonymous;
@@ -57,22 +57,20 @@ export default function ProfilePage() {
     }
     
     const handleSaveChanges = async () => {
-        if (!user) return;
+        if (!user || !auth.currentUser || !firestore) return;
         setLoading(true);
 
         try {
-            if(auth.currentUser) {
-                await updateProfile(auth.currentUser, { displayName });
-            }
-
-            const userDocRef = doc(db, 'users', user.uid);
-            await setDoc(userDocRef, { displayName }, { merge: true });
+            await updateProfile(auth.currentUser, { displayName });
+            
+            const userDocRef = doc(firestore, 'users', user.uid);
+            setDocumentNonBlocking(userDocRef, { displayName }, { merge: true });
 
             toast({
                 title: "Profile Updated",
                 description: "Your display name has been updated.",
             });
-            // This will trigger a re-render in useAuth and update the UI
+            // This will trigger a re-render in useUser and update the UI
         } catch (error: any) {
             toast({
                 variant: "destructive",

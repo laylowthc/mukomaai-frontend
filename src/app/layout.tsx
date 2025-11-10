@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import {Providers} from '@/app/providers';
 import {Toaster} from '@/components/ui/toaster';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'MukomaAI',
@@ -22,7 +23,9 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <Providers>
-          {children}
+          <FirebaseClientProvider>
+            {children}
+          </FirebaseClientProvider>
           <Toaster />
         </Providers>
       </body>

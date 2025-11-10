@@ -1,13 +1,13 @@
 'use client';
 
 import { AuthForm } from '@/components/auth-form';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Bot } from 'lucide-react';
 
 export default function AuthPage() {
-  const { user, loading } = useAuth();
+  const { user, isUserLoading } = useUser();
   const router = useRouter();
 
   useEffect(() => {
@@ -16,7 +16,7 @@ export default function AuthPage() {
     }
   }, [user, router]);
 
-  if (loading || user) {
+  if (isUserLoading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Bot className="h-12 w-12 animate-spin text-primary" />

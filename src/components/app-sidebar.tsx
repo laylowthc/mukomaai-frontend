@@ -14,30 +14,27 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth } from '@/hooks/use-auth';
-import { auth, db } from '@/lib/firebase';
-import { Bot, Home, LogOut, MessageSquare, MessageSquarePlus, Settings, ShoppingCart, User } from 'lucide-react';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { Bot, LogOut, MessageSquare, MessageSquarePlus, Settings, ShoppingCart, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
-import { useEffect, useState } from 'react';
+import { collection, query, orderBy } from 'firebase/firestore';
 import type { Chat } from '@/lib/types';
 
 export function AppSidebar() {
-  const { user } = useAuth();
+  const { user } = useUser();
+  const auth = useAuth();
+  const firestore = useFirestore();
   const pathname = usePathname();
-  const [chats, setChats] = useState<Chat[]>([]);
-  const isGuest = user?.isAnonymous;
+  
+  const chatsQuery = useMemoFirebase(() => {
+    if (!user || !firestore) return null;
+    return query(collection(firestore, 'users', user.uid, 'chats'), orderBy('createdAt', 'desc'));
+  }, [user, firestore]);
 
-  useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, 'users', user.uid, 'chats'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const chatData = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Chat));
-      setChats(chatData);
-    });
-    return () => unsubscribe();
-  }, [user]);
+  const { data: chats = [] } = useCollection<Chat>(chatsQuery);
+
+  const isGuest = user?.isAnonymous;
 
   const getInitials = (name?: string | null) => {
     if (!name) return 'U';
@@ -134,7 +131,7 @@ export function AppSidebar() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {chats.map(chat => (
+              {chats && chats.map(chat => (
                 <SidebarMenuItem key={chat.id}>
                   <SidebarMenuButton asChild isActive={pathname === `/chat/${chat.id}`} variant="ghost" size="sm">
                     <Link href={`/chat/${chat.id}`}>
