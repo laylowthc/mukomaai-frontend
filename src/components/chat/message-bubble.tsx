@@ -53,7 +53,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           )}
         </div>
         {!isUser && persona && (
-          <p className="text-xs text-muted-foreground">{persona.name}</p>
+          <p className="text-xs text-muted-foreground">{persona.displayName}</p>
         )}
       </div>
       {isUser && (

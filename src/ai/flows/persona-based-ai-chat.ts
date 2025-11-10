@@ -38,14 +38,10 @@ const personaBasedAIChatFlow = ai.defineFlow(
     const persona = personas.find(p => p.id === input.selectedPersona);
     const systemPrompt = persona?.systemPrompt || 'You are a helpful AI assistant.';
 
-    const prompt = `
-      SYSTEM PROMPT: ${systemPrompt}
-      LANGUAGE: Respond in ${input.language}.
-      USER MESSAGE: ${input.message}
-    `;
+    const finalPrompt = `${systemPrompt}\n\nUser language: ${input.language}\n\nUser: ${input.message}`;
 
     const { output } = await ai.generate({
-      prompt: prompt,
+      prompt: finalPrompt,
       model: 'googleai/gemini-2.5-flash',
     });
 

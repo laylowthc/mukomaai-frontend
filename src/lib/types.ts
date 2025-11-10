@@ -3,7 +3,11 @@ import type { Timestamp } from 'firebase/firestore';
 export interface Persona {
   id: string;
   name: string;
+  displayName: string;
   description: string;
+  languagePriority: string[];
+  verbosity: string;
+  formality: string;
   systemPrompt: string;
   avatarUrl?: string;
   imageHint?: string;

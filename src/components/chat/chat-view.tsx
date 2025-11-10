@@ -27,7 +27,7 @@ export function ChatView({ chatId }: { chatId: string }) {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const [settings, setSettings] = useState<UserSettings>({ language: 'Shona', defaultPersona: 'Mukoma' });
+  const [settings, setSettings] = useState<UserSettings>({ language: 'Shona', defaultPersona: 'mukoma' });
   
   const [selectedPersona, setSelectedPersona] = useState(settings.defaultPersona);
   const [selectedLanguage, setSelectedLanguage] = useState(settings.language);
@@ -65,7 +65,7 @@ export function ChatView({ chatId }: { chatId: string }) {
         const data = userSettingsDoc;
         setSettings(data);
         if (chatId === 'new') { // Only set defaults for a new chat
-            setSelectedPersona(data.defaultPersona || 'Mukoma');
+            setSelectedPersona(data.defaultPersona || 'mukoma');
             setSelectedLanguage(data.language || 'Shona');
         }
     }
@@ -216,7 +216,7 @@ export function ChatView({ chatId }: { chatId: string }) {
               <SelectContent>
                 {personas.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.name}
+                    {p.displayName}
                   </SelectItem>
                 ))}
               </SelectContent>

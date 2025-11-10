@@ -23,7 +23,7 @@ export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
     const { user } = useUser();
     const firestore = useFirestore();
-    const [settings, setSettings] = useState<UserSettings>({ language: 'Shona', defaultPersona: 'Mukoma' });
+    const [settings, setSettings] = useState<UserSettings>({ language: 'Shona', defaultPersona: 'mukoma' });
     const [loading, setLoading] = useState(true);
     const isGuest = user?.isAnonymous;
 
@@ -38,7 +38,7 @@ export default function SettingsPage() {
         if (userDoc) {
             setSettings({
                 language: userDoc.language || 'Shona',
-                defaultPersona: userDoc.defaultPersona || 'Mukoma',
+                defaultPersona: userDoc.defaultPersona || 'mukoma',
             });
         }
         setLoading(userDocLoading);
@@ -139,7 +139,7 @@ export default function SettingsPage() {
                                 <SelectContent>
                                     {personas.map((p) => (
                                         <SelectItem key={p.id} value={p.id}>
-                                            {p.name}
+                                            {p.displayName}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
