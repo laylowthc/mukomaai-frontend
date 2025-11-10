@@ -16,7 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/use-auth';
 import { auth, db } from '@/lib/firebase';
-import { Bot, Home, LogOut, MessageSquare, MessageSquarePlus, Settings, ShoppingCart } from 'lucide-react';
+import { Bot, Home, LogOut, MessageSquare, MessageSquarePlus, Settings, ShoppingCart, User } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
@@ -27,6 +27,7 @@ export function AppSidebar() {
   const { user } = useAuth();
   const pathname = usePathname();
   const [chats, setChats] = useState<Chat[]>([]);
+  const isGuest = user?.isAnonymous;
 
   useEffect(() => {
     if (!user) return;
@@ -42,6 +43,43 @@ export function AppSidebar() {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
+  
+  const renderUserProfile = () => {
+    if (isGuest) {
+      return (
+        <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+                <Link href="/auth">
+                    <User />
+                    <span>Sign Up / Sign In</span>
+                </Link>
+            </SidebarMenuButton>
+        </SidebarMenuItem>
+      )
+    }
+
+    return (
+        <>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/profile">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user?.photoURL ?? ''} />
+                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                  </Avatar>
+                  <span>{user?.displayName || 'Profile'}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={() => auth.signOut()}>
+                <LogOut />
+                Logout
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+        </>
+    )
+  }
 
   return (
     <>
@@ -110,23 +148,7 @@ export function AppSidebar() {
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/profile">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.photoURL ?? ''} />
-                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
-                  </Avatar>
-                  <span>{user?.displayName || 'Profile'}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => auth.signOut()}>
-                <LogOut />
-                Logout
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            {renderUserProfile()}
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>

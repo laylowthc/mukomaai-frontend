@@ -11,10 +11,13 @@ import { personas } from '@/lib/personas';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bot, Send, Languages } from 'lucide-react';
+import { Bot, Send, Languages, User as UserIcon } from 'lucide-react';
 import { MessageBubble } from './message-bubble';
 import { ScrollArea } from '../ui/scroll-area';
 import { SidebarTrigger } from '../ui/sidebar';
+import Link from 'next/link';
+
+const GUEST_MESSAGE_LIMIT = 5;
 
 export function ChatView({ chatId }: { chatId: string }) {
   const { user } = useAuth();
@@ -28,6 +31,11 @@ export function ChatView({ chatId }: { chatId: string }) {
   const [selectedLanguage, setSelectedLanguage] = useState(settings.language);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  
+  const isGuest = user?.isAnonymous;
+  const userMessagesCount = messages.filter(m => m.role === 'user').length;
+  const isMessageLimitReached = isGuest && userMessagesCount >= GUEST_MESSAGE_LIMIT;
+
 
   useEffect(() => {
     if (user) {
@@ -71,7 +79,7 @@ export function ChatView({ chatId }: { chatId: string }) {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !user || loading) return;
+    if (!newMessage.trim() || !user || loading || isMessageLimitReached) return;
 
     setLoading(true);
 
@@ -134,6 +142,24 @@ export function ChatView({ chatId }: { chatId: string }) {
     }
   };
 
+  const renderGuestLimitMessage = () => {
+    if (!isMessageLimitReached) return null;
+    return (
+        <div className="p-4 md:p-6">
+            <div className="flex flex-col items-center justify-center text-center p-6 bg-secondary rounded-lg">
+                <UserIcon className="h-10 w-10 text-primary mb-4" />
+                <h3 className="text-xl font-semibold mb-2">Message Limit Reached</h3>
+                <p className="text-muted-foreground mb-4">
+                    You've reached your message limit for guest mode. Please create an account to continue chatting.
+                </p>
+                <Button asChild>
+                    <Link href="/auth">Sign Up / Sign In</Link>
+                </Button>
+            </div>
+        </div>
+    );
+  }
+
   return (
     <main className="flex h-screen flex-col bg-background">
       <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-secondary/50 px-6">
@@ -152,12 +178,13 @@ export function ChatView({ chatId }: { chatId: string }) {
           ))}
           {loading && <MessageBubble message={{role: 'assistant', text: '...'}} />}
         </div>
+        {renderGuestLimitMessage()}
       </ScrollArea>
       )}
       <div className="border-t bg-secondary/50 p-4">
         <form onSubmit={handleSendMessage} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select value={selectedPersona} onValueChange={setSelectedPersona}>
+            <Select value={selectedPersona} onValueChange={setSelectedPersona} disabled={isMessageLimitReached}>
               <SelectTrigger>
                 <SelectValue placeholder="Select Persona" />
               </SelectTrigger>
@@ -169,7 +196,7 @@ export function ChatView({ chatId }: { chatId: string }) {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+            <Select value={selectedLanguage} onValueChange={setSelectedLanguage} disabled={isMessageLimitReached}>
               <SelectTrigger>
                 <Languages className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Select Language" />
@@ -187,9 +214,9 @@ export function ChatView({ chatId }: { chatId: string }) {
               placeholder="Type your message..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
-              disabled={loading}
+              disabled={loading || isMessageLimitReached}
             />
-            <Button type="submit" disabled={loading || !newMessage.trim()}>
+            <Button type="submit" disabled={loading || !newMessage.trim() || isMessageLimitReached}>
               {loading ? (
                 <Bot className="h-4 w-4 animate-spin" />
               ) : (

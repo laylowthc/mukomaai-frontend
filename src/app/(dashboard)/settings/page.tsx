@@ -12,6 +12,8 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useEffect, useState } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { User } from 'lucide-react';
+import Link from 'next/link';
 
 type UserSettings = {
     language: 'Shona' | 'English' | 'Ndebele';
@@ -23,6 +25,7 @@ export default function SettingsPage() {
     const { user } = useAuth();
     const [settings, setSettings] = useState<UserSettings>({ language: 'Shona', defaultPersona: 'Mukoma' });
     const [loading, setLoading] = useState(true);
+    const isGuest = user?.isAnonymous;
     
     useEffect(() => {
         if (user) {
@@ -56,6 +59,33 @@ export default function SettingsPage() {
     if (loading) {
         return <div className="flex h-full items-center justify-center"><p>Loading settings...</p></div>
     }
+    
+    if (isGuest) {
+        return (
+            <main className="flex h-full flex-col">
+                <header className="flex h-16 items-center border-b bg-secondary/50 px-6 shrink-0">
+                    <h1 className="text-xl font-semibold font-headline">Settings</h1>
+                </header>
+                <div className="flex-1 overflow-auto p-6 flex items-center justify-center">
+                    <Card className="max-w-md w-full mx-auto">
+                        <CardHeader>
+                            <CardTitle className="text-center">Guest Mode</CardTitle>
+                            <CardDescription className="text-center">
+                                Create an account to customize your experience.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex flex-col items-center justify-center text-center space-y-4">
+                            <User className="h-16 w-16 text-muted-foreground" />
+                            <p>You are currently browsing as a guest.</p>
+                            <Button asChild>
+                                <Link href="/auth">Sign Up / Sign In</Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            </main>
+        )
+    }
 
     return (
         <main className="flex h-full flex-col">
@@ -84,8 +114,7 @@ export default function SettingsPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="language">Language</Label>
-                            <Select
+                            <Label htmlFor="language">Language</Label>                            <Select
                                 value={settings.language}
                                 onValueChange={(value) => setSettings(s => ({ ...s, language: value as UserSettings['language'] }))}
                             >
