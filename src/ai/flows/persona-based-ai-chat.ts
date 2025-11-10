@@ -36,7 +36,10 @@ const personaBasedAIChatFlow = ai.defineFlow(
   },
   async (input) => {
     const persona = personas.find(p => p.id === input.selectedPersona);
-    const systemPrompt = persona?.systemPrompt || 'You are a helpful AI assistant.';
+    if (!persona) {
+      throw new Error(`Persona with id "${input.selectedPersona}" not found.`);
+    }
+    const systemPrompt = persona.systemPrompt;
 
     const finalPrompt = `${systemPrompt}\n\nUser language: ${input.language}\n\nUser: ${input.message}`;
 
