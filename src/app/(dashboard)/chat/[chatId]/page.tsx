@@ -34,8 +34,7 @@ const useNewChatRedirect = (chatId: string) => {
 };
 
 
-export default function ChatPage({ params }: { params: { chatId: string } }) {
-  const { chatId } = params;
+export default function ChatPage({ params: { chatId } }: { params: { chatId: string } }) {
   const isRedirecting = useNewChatRedirect(chatId);
 
   if (isRedirecting || !chatId || chatId === 'new') {
