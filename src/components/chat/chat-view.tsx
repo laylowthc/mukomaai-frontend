@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -15,6 +16,7 @@ import { MessageBubble } from './message-bubble';
 import { ScrollArea } from '../ui/scroll-area';
 import { SidebarTrigger } from '../ui/sidebar';
 import Link from 'next/link';
+import { toast } from '@/hooks/use-toast';
 
 const GUEST_MESSAGE_LIMIT = 5;
 
@@ -41,11 +43,11 @@ export function ChatView({ chatId }: { chatId: string }) {
     return doc(firestore, 'users', user.uid, 'chats', chatId);
   }, [user, firestore, chatId]);
 
-  const { data: chatDoc, isLoading: chatLoading } = useDoc<{messages: ChatMessage[]}>(chatDocRef);
+  const { data: chatDoc, isLoading: chatLoading } = useDoc<{messages: ChatMessage[], summary?: string}>(chatDocRef);
 
   useEffect(() => {
     if (chatDoc?.messages) {
-      setMessages(chatDoc.messages.sort((a, b) => a.timestamp?.toMillis() - b.timestamp?.toMillis()));
+      setMessages(chatDoc.messages.sort((a, b) => (a.timestamp?.toMillis() ?? 0) - (b.timestamp?.toMillis() ?? 0)));
     } else {
       setMessages([]);
     }
@@ -62,9 +64,9 @@ export function ChatView({ chatId }: { chatId: string }) {
     if (userSettingsDoc) {
         const data = userSettingsDoc;
         setSettings(data);
-        if (chatId === 'new') {
-            setSelectedPersona(data.defaultPersona);
-            setSelectedLanguage(data.language);
+        if (chatId === 'new') { // Only set defaults for a new chat
+            setSelectedPersona(data.defaultPersona || 'Mukoma');
+            setSelectedLanguage(data.language || 'Shona');
         }
     }
   }, [userSettingsDoc, chatId]);
@@ -85,23 +87,26 @@ export function ChatView({ chatId }: { chatId: string }) {
     if (!newMessage.trim() || !user || loading || isMessageLimitReached || !chatDocRef) return;
 
     setLoading(true);
+    const text = newMessage;
+    setNewMessage('');
 
     const userMessage: ChatMessage = {
       role: 'user',
-      text: newMessage,
+      text: text,
       language: selectedLanguage,
-      timestamp: serverTimestamp() as any,
+      timestamp: serverTimestamp() as any, // Cast for local state before server conversion
     };
     
-    setNewMessage('');
-    await updateDoc(chatDocRef, {
+    // Optimistically update UI
+    setMessages(currentMessages => [...currentMessages, userMessage]);
+    updateDocumentNonBlocking(chatDocRef, {
       messages: arrayUnion(userMessage),
     });
     
     try {
       const response = await personaBasedAIChat({
         userId: user.uid,
-        message: newMessage,
+        message: text,
         selectedPersona,
         language: selectedLanguage,
       });
@@ -114,32 +119,51 @@ export function ChatView({ chatId }: { chatId: string }) {
         timestamp: serverTimestamp() as any,
       };
 
-      await updateDoc(chatDocRef, {
+      updateDocumentNonBlocking(chatDocRef, {
         messages: arrayUnion(assistantMessage),
       });
 
+      // Optimistically update for summary
       const updatedMessages = [...messages, userMessage, assistantMessage];
       if (updatedMessages.length > 2 && updatedMessages.length % 5 === 0) {
-        const chatHistoryForSummary = updatedMessages.map(m => ({...m, text: m.text, timestamp: Date.now()}));
-        summarizeChatHistory({ chatHistory: chatHistoryForSummary as any }).then(({ summary }) => {
-          updateDoc(chatDocRef, { summary });
-        });
+        // We don't need to wait for this background task
+        summarizeAndUpdate();
       }
 
     } catch (error) {
       console.error('Error with AI chat:', error);
-      const errorMessage: ChatMessage = {
-        role: 'assistant',
-        text: "Sorry, I encountered an error. Please try again.",
-        persona: 'system',
-        language: 'English',
-        timestamp: serverTimestamp() as any,
-      };
-      await updateDoc(chatDocRef, {
-        messages: arrayUnion(errorMessage),
+       toast({
+        variant: "destructive",
+        title: "AI Error",
+        description: "Sorry, I encountered an error. Please try again.",
       });
+      // Optionally remove the optimistic user message if AI fails
+      setMessages(currentMessages => currentMessages.filter(m => m !== userMessage));
+      // You might also want to remove it from Firestore here if needed.
     } finally {
       setLoading(false);
+    }
+  };
+
+  const summarizeAndUpdate = async () => {
+    if (!chatDocRef) return;
+    const currentDoc = await getDoc(chatDocRef);
+    const currentMessages = currentDoc.data()?.messages || [];
+    
+    if (currentMessages.length > 2) {
+      const chatHistoryForSummary = currentMessages.map((m: ChatMessage) => ({
+        role: m.role,
+        text: m.text,
+        language: m.language,
+        timestamp: m.timestamp?.toMillis() || Date.now(),
+      }));
+
+      try {
+        const { summary } = await summarizeChatHistory({ chatHistory: chatHistoryForSummary });
+        updateDocumentNonBlocking(chatDocRef, { summary });
+      } catch (e) {
+        console.error("Failed to summarize chat history:", e);
+      }
     }
   };
 
@@ -165,7 +189,7 @@ export function ChatView({ chatId }: { chatId: string }) {
     <main className="flex h-screen flex-col bg-background">
       <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-secondary/50 px-6">
         <SidebarTrigger className="md:hidden" />
-        <h1 className="text-xl font-semibold font-headline">Chat</h1>
+        <h1 className="text-xl font-semibold font-headline">{chatDoc?.summary || "Chat"}</h1>
       </header>
       {chatLoading ? (
         <div className="flex flex-1 items-center justify-center">
@@ -185,7 +209,7 @@ export function ChatView({ chatId }: { chatId: string }) {
       <div className="border-t bg-secondary/50 p-4">
         <form onSubmit={handleSendMessage} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Select value={selectedPersona} onValueChange={setSelectedPersona} disabled={isMessageLimitReached}>
+            <Select value={selectedPersona} onValueChange={setSelectedPersona} disabled={isMessageLimitReached || loading}>
               <SelectTrigger>
                 <SelectValue placeholder="Select Persona" />
               </SelectTrigger>
@@ -197,7 +221,7 @@ export function ChatView({ chatId }: { chatId: string }) {
                 ))}
               </SelectContent>
             </Select>
-            <Select value={selectedLanguage} onValueChange={setSelectedLanguage} disabled={isMessageLimitReached}>
+            <Select value={selectedLanguage} onValueChange={setSelectedLanguage} disabled={isMessageLimitReached || loading}>
               <SelectTrigger>
                 <Languages className="mr-2 h-4 w-4" />
                 <SelectValue placeholder="Select Language" />

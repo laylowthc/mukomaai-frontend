@@ -1,9 +1,10 @@
+
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { ChatView } from '@/components/chat/chat-view';
 import { Bot } from 'lucide-react';
@@ -18,14 +19,17 @@ const useNewChatRedirect = (chatId: string) => {
       const newChatId = uuidv4();
       const chatRef = doc(firestore, 'users', user.uid, 'chats', newChatId);
       
-      setDoc(chatRef, { 
+      // Use a then() to handle successful navigation, errors are caught by the non-blocking helper
+      setDocumentNonBlocking(chatRef, { 
         createdAt: new Date(),
         id: newChatId,
+        userId: user.uid,
         messages: [],
         summary: "New Chat"
-      }).then(() => {
-        router.replace(`/chat/${newChatId}`);
-      });
+      }, { merge: true });
+      
+      // We can optimistically navigate
+      router.replace(`/chat/${newChatId}`);
     }
   }, [chatId, user, router, firestore]);
 
