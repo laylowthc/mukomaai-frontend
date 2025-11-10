@@ -23,7 +23,6 @@ const useNewChatRedirect = (chatId: string) => {
         createdAt: new Date(),
         id: newChatId,
         userId: user.uid,
-        messages: [],
         summary: "New Chat"
       }, { merge: true });
       
@@ -35,7 +34,8 @@ const useNewChatRedirect = (chatId: string) => {
 };
 
 
-export default function ChatPage({ params: { chatId } }: { params: { chatId: string } }) {
+export default function ChatPage({ params }: { params: { chatId: string } }) {
+  const { chatId } = params;
   const isRedirecting = useNewChatRedirect(chatId);
 
   if (isRedirecting || !chatId || chatId === 'new') {
