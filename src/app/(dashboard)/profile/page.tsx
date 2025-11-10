@@ -7,9 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User } from 'lucide-react';
+import { useState } from 'react';
+import { updateProfile } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { toast } from '@/hooks/use-toast';
+import { auth } from '@/lib/firebase';
+
 
 export default function ProfilePage() {
     const { user } = useAuth();
+    const [displayName, setDisplayName] = useState(user?.displayName ?? '');
+    const [loading, setLoading] = useState(false);
 
     if (!user) return null;
 
@@ -17,6 +26,35 @@ export default function ProfilePage() {
         if (!name) return 'U';
         return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
     }
+    
+    const handleSaveChanges = async () => {
+        if (!user) return;
+        setLoading(true);
+
+        try {
+            if(auth.currentUser) {
+                await updateProfile(auth.currentUser, { displayName });
+            }
+
+            const userDocRef = doc(db, 'users', user.uid);
+            await setDoc(userDocRef, { displayName }, { merge: true });
+
+            toast({
+                title: "Profile Updated",
+                description: "Your display name has been updated.",
+            });
+            // This will trigger a re-render in useAuth and update the UI
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error updating profile",
+                description: error.message,
+            });
+        } finally {
+            setLoading(false);
+        }
+    }
+
 
     return (
         <main className="flex h-full flex-col">
@@ -44,7 +82,7 @@ export default function ProfilePage() {
 
                         <div className="space-y-2">
                             <Label htmlFor="displayName">Display Name</Label>
-                            <Input id="displayName" defaultValue={user.displayName ?? ''} />
+                            <Input id="displayName" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
                         </div>
 
                         <div className="space-y-2">
@@ -53,7 +91,7 @@ export default function ProfilePage() {
                         </div>
                         
                         <div className="flex justify-end">
-                            <Button>Save Changes</Button>
+                            <Button onClick={handleSaveChanges} disabled={loading}>{loading ? 'Saving...' : 'Save Changes'}</Button>
                         </div>
                     </CardContent>
                 </Card>
