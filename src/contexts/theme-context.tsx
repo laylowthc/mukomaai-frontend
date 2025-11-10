@@ -13,8 +13,10 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(undefine
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>('dark');
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const storedTheme = localStorage.getItem('theme') as Theme | null;
     if (storedTheme) {
       setTheme(storedTheme);
@@ -25,11 +27,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    const root = window.document.documentElement;
-    root.classList.remove('light', 'dark');
-    root.classList.add(theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+    if (mounted) {
+      const root = window.document.documentElement;
+      root.classList.remove('light', 'dark');
+      root.classList.add(theme);
+      localStorage.setItem('theme', theme);
+    }
+  }, [theme, mounted]);
+
+  if (!mounted) {
+    // Render nothing on the server to avoid mismatch
+    return null;
+  }
 
   return (
     <ThemeContext.Provider value={{ theme, setTheme }}>
