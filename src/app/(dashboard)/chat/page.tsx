@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { MessageSquarePlus } from 'lucide-react';
 import Link from 'next/link';
@@ -14,7 +15,7 @@ export default function ChatPage() {
         <Button className="mt-6" asChild>
           <Link href="/chat/new">
             <MessageSquarePlus className="mr-2 h-4 w-4" />
-            New Chat
+            Hurukuro Itsva
           </Link>
         </Button>
       </div>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { AuthForm } from '@/components/auth-form';
@@ -32,7 +33,7 @@ export default function AuthPage() {
                 <Bot className="h-10 w-10 text-primary" />
                 <h1 className="text-4xl font-bold font-headline">MukomaAI</h1>
             </div>
-          <p className="text-muted-foreground">Your Shona-First AI Assistant</p>
+          <p className="text-muted-foreground">Murauri Wako wechiShona</p>
         </div>
         <AuthForm />
       </div>

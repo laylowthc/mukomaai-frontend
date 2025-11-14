@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -127,7 +128,7 @@ export function AppSidebar() {
                 <SidebarMenuButton asChild>
                   <Link href="/chat/new">
                     <MessageSquarePlus />
-                    New Chat
+                    Hurukuro Itsva
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

@@ -247,7 +247,7 @@ export function ChatView({ chatId }: { chatId: string }) {
           <div className="flex items-center gap-2">
             <Input
               autoComplete="off"
-              placeholder="Type your message..."
+              placeholder="Nyora pano..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               disabled={loading || isMessageLimitReached}
