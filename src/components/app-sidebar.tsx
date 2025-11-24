@@ -79,6 +79,8 @@ export function AppSidebar() {
     )
   }
 
+  const newChatHref = isGuest ? '/auth' : '/chat/new';
+
   return (
     <>
       <div className="absolute top-4 left-4 z-20 md:hidden">
@@ -126,7 +128,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <Link href="/chat/new">
+                  <Link href={newChatHref}>
                     <MessageSquarePlus />
                     Hurukuro Itsva
                   </Link>
