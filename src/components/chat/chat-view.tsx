@@ -51,6 +51,8 @@ function timestampToMs(
 }
 
 export function ChatView({ chatId }: { chatId: string }) {
+  const isNewChat = chatId === 'new';
+
   const { user } = useUser();
   const firestore = useFirestore();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
