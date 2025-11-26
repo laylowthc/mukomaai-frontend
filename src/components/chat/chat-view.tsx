@@ -80,10 +80,11 @@ export function ChatView({ chatId }: { chatId: string }) {
   const isMessageLimitReached =
     isGuest && userMessagesCount >= GUEST_MESSAGE_LIMIT;
 
-  const chatDocRef = useMemoFirebase(() => {
-    if (!user || !firestore) return null;
-    return doc(firestore, 'users', user.uid, 'chats', chatId);
-  }, [user, firestore, chatId]);
+    const chatDocRef = useMemoFirebase(() => {
+      if (!user || !firestore || chatId === 'new') return null;
+      return doc(firestore, 'users', user.uid, 'chats', chatId);
+    }, [user, firestore, chatId]);
+    
 
   const { data: chatDoc, isLoading: chatLoading } = useDoc<{
     messages: ChatMessage[];
@@ -169,9 +170,12 @@ export function ChatView({ chatId }: { chatId: string }) {
       timestamp: new Date(),
     };
     
-    updateDocumentNonBlocking(chatDocRef, {
-      messages: arrayUnion(userMessageForFirestore),
-    });
+    if (!isNewChat && chatDocRef) {
+      updateDocumentNonBlocking(chatDocRef, {
+        messages: arrayUnion(userMessageForFirestore),
+      });
+    }
+    
     
 
     try {
@@ -200,9 +204,12 @@ export function ChatView({ chatId }: { chatId: string }) {
         timestamp: serverTimestamp()
       };
 
-      updateDocumentNonBlocking(chatDocRef, {
-        messages: arrayUnion(assistantMessageForFirestore)
-      });
+      if (!isNewChat && chatDocRef) {
+        updateDocumentNonBlocking(chatDocRef, {
+          messages: arrayUnion(assistantMessageForFirestore),
+        });
+      }
+      
 
       const assistantMessageForUI: ChatMessage = {
         ...assistantMessageForFirestore,
@@ -241,7 +248,8 @@ export function ChatView({ chatId }: { chatId: string }) {
   };
 
   const summarizeAndUpdate = async () => {
-    if (!chatDocRef) return;
+    if (!chatDocRef || isNewChat) return;
+  
     const currentDoc = await getDoc(chatDocRef);
     const currentMessages = currentDoc.data()?.messages || [];
 
