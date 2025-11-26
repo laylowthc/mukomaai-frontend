@@ -221,6 +221,7 @@ export function ChatView({ chatId }: { chatId: string }) {
         userMessage,
         assistantMessageForUI
       ];
+      setMessages(updatedMessages);
 
       if (
         updatedMessages.length > 2 &&
