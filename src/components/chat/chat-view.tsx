@@ -164,12 +164,13 @@ export function ChatView({ chatId }: { chatId: string }) {
     // Firestore version with serverTimestamp
     const userMessageForFirestore = {
       ...userMessage,
-      timestamp: serverTimestamp()
+      timestamp: new Date(),
     };
-
+    
     updateDocumentNonBlocking(chatDocRef, {
-      messages: arrayUnion(userMessageForFirestore)
+      messages: arrayUnion(userMessageForFirestore),
     });
+    
 
     try {
       const res = await fetch(MUKOMA_BACKEND_URL, {
