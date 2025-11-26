@@ -146,30 +146,30 @@ export function ChatView({ chatId }: { chatId: string }) {
       !user ||
       loading ||
       isMessageLimitReached ||
-      !chatDocRef
-    )
+      (!chatDocRef && !isNewChat)
+    ) {
       return;
-
+    }
+  
     setLoading(true);
     const text = newMessage;
     setNewMessage('');
-
+  
     const userMessage: ChatMessage = {
       role: 'user',
       text,
       language: selectedLanguage,
-      timestamp: new Date() // Optimistic UI timestamp
+      timestamp: new Date()
     };
-
+  
     // Optimistic UI update
     setMessages(currentMessages => [...currentMessages, userMessage]);
-
-    // Firestore version with serverTimestamp
+  
     const userMessageForFirestore = {
       ...userMessage,
-      timestamp: new Date(),
+      timestamp: new Date()
     };
-    
+  
     if (!isNewChat && chatDocRef) {
       updateDocumentNonBlocking(chatDocRef, {
         messages: arrayUnion(userMessageForFirestore),
