@@ -7,8 +7,8 @@
  * - PersonaBasedAIChatOutput - The return type for the personaBasedAIChat function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 import { personas } from '@/lib/personas';
 
 const PersonaBasedAIChatInputSchema = z.object({
@@ -20,11 +20,16 @@ const PersonaBasedAIChatInputSchema = z.object({
 export type PersonaBasedAIChatInput = z.infer<typeof PersonaBasedAIChatInputSchema>;
 
 const PersonaBasedAIChatOutputSchema = z.object({
-  response: z.string().describe('The AI assistant\'s response, tailored to the selected persona.'),
+  response: z.string().describe("The AI assistant's response, tailored to the selected persona."),
 });
 export type PersonaBasedAIChatOutput = z.infer<typeof PersonaBasedAIChatOutputSchema>;
 
-export async function personaBasedAIChat(input: PersonaBasedAIChatInput): Promise<PersonaBasedAIChatOutput> {
+// For now we hardcode the backend URL used by Mukoma.ai (Render backend)
+const MUKOMA_BACKEND_URL = 'https://mukomaai-backend.onrender.com/mukoma-ai';
+
+export async function personaBasedAIChat(
+  input: PersonaBasedAIChatInput
+): Promise<PersonaBasedAIChatOutput> {
   return personaBasedAIChatFlow(input);
 }
 
@@ -35,19 +40,43 @@ const personaBasedAIChatFlow = ai.defineFlow(
     outputSchema: PersonaBasedAIChatOutputSchema,
   },
   async (input) => {
-    const persona = personas.find(p => p.id === input.selectedPersona);
+    const persona = personas.find((p) => p.id === input.selectedPersona);
     if (!persona) {
       throw new Error(`Persona with id "${input.selectedPersona}" not found.`);
     }
+
+    // We still use the persona’s system prompt to give the backend context if we want
     const systemPrompt = persona.systemPrompt;
 
-    const finalPrompt = `${systemPrompt}\n\nUser language: ${input.language}\n\nUser: ${input.message}`;
+    // This is what we send to the MukomaAI backend
+    const payload = {
+      message: `${systemPrompt}\n\nUser language: ${input.language}\n\nUser: ${input.message}`,
+      persona: input.selectedPersona,
+      language: input.language,
+    };
 
-    const { output } = await ai.generate({
-      prompt: finalPrompt,
-      model: 'googleai/gemini-2.5-flash',
+    // Call your Render backend instead of Gemini directly
+    const res = await fetch(MUKOMA_BACKEND_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
 
-    return { response: output?.text ?? 'Sorry, I could not generate a response.' };
+    if (!res.ok) {
+      console.error('Mukoma backend error status:', res.status);
+      throw new Error(`Mukoma.ai backend returned ${res.status}`);
+    }
+
+    const data = await res.json().catch((err) => {
+      console.error('Failed to parse Mukoma backend JSON:', err);
+      throw new Error('Invalid JSON from Mukoma.ai backend');
+    });
+
+    const reply =
+      data?.reply ??
+      data?.response ??
+      'Sorry, something went wrong talking to Mukoma.ai backend.';
+
+    return { response: reply };
   }
 );
