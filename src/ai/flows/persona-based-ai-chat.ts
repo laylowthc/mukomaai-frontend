@@ -49,32 +49,41 @@ const personaBasedAIChatFlow = ai.defineFlow(
     inputSchema: PersonaBasedAIChatInputSchema,
     outputSchema: PersonaBasedAIChatOutputSchema,
   },
-  async (input) => {
-    // Validate persona exists on the frontend side (useful for UI & sanity)
+ async (input) => {
     const persona = personas.find((p) => p.id === input.selectedPersona);
     if (!persona) {
       throw new Error(`Persona with id "${input.selectedPersona}" not found.`);
     }
 
-    // NOTE:
-    // We no longer prepend persona.systemPrompt to the message.
-    // Backend is now responsible for persona + global prompt composition.
+    // NEW: Load user preferences from Firestore
+    const userRef = doc(db, "users", input.userId);
+    const userSnap = await getDoc(userRef);
 
-    // This is what we send to the MukomaAI backend
-   const payload = {
-  message: input.message,
-  persona: userDefaultPersona || input.selectedPersona,
-  language: userDefaultLanguage || input.language,
-};
-           
+    let userDefaultPersona = null;
+    let userDefaultLanguage = null;
+
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      userDefaultPersona = userData.defaultPersona ?? null;
+      userDefaultLanguage = userData.language ?? null;
+    }
+
+    // NEW: Persona + language fallback logic
+    const payload = {
+      message: input.message,
+      persona: userDefaultPersona || input.selectedPersona,
+      language: userDefaultLanguage || input.language,
     };
 
-    // Call the MukomaAI backend hosted on Render
+    // Backend call stays the same
     const res = await fetch(MUKOMA_BACKEND_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
+
+    ...
+}
 
     if (!res.ok) {
       console.error('Mukoma backend error status:', res.status);
