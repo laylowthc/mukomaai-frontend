@@ -61,10 +61,12 @@ const personaBasedAIChatFlow = ai.defineFlow(
     // Backend is now responsible for persona + global prompt composition.
 
     // This is what we send to the MukomaAI backend
-    const payload = {
-      message: input.message,               // raw user message only
-      persona: input.selectedPersona,       // persona ID (backend loads persona prompt)
-      language: input.language,             // language preference hint
+   const payload = {
+  message: input.message,
+  persona: userDefaultPersona || input.selectedPersona,
+  language: userDefaultLanguage || input.language,
+};
+           
     };
 
     // Call the MukomaAI backend hosted on Render
