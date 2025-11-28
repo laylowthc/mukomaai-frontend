@@ -16,7 +16,8 @@
  *   - Combining global core + guardrails + persona
  *   - Building the final system prompt for OpenAI
  */
-
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { personas } from '@/lib/personas';
