@@ -1,14 +1,21 @@
 'use server';
 /**
- * @fileOverview Implements a persona-based AI chat flow where the user can select a persona to tailor the AI's responses.
+ * @fileOverview Implements a persona-based AI chat flow where the user can select a persona
+ * to tailor the AI's responses.
  *
- * - personaBasedAIChat - A function that handles the persona-based AI chat.
- * - PersonaBasedAIChatInput - The input type for the personaBasedAIChat function.
- * - PersonaBasedAIChatOutput - The return type for the personaBasedAIChat function.
+ * In this version:
+ * - The frontend no longer injects the persona system prompt into the message.
+ * - It simply forwards the raw user message, selected persona ID, and language
+ *   to the MukomaAI backend hosted on Render.
+ * - The backend is responsible for:
+ *   - Loading the correct persona prompt
+ *   - Combining global core + guardrails + persona
+ *   - Building the final system prompt for OpenAI
  */
-
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { ai } from '@/ai/genkit';
+import { z } from 'genkit';
 import { personas } from '@/lib/personas';
 
 const PersonaBasedAIChatInputSchema = z.object({
@@ -20,11 +27,16 @@ const PersonaBasedAIChatInputSchema = z.object({
 export type PersonaBasedAIChatInput = z.infer<typeof PersonaBasedAIChatInputSchema>;
 
 const PersonaBasedAIChatOutputSchema = z.object({
-  response: z.string().describe('The AI assistant\'s response, tailored to the selected persona.'),
+  response: z.string().describe("The AI assistant's response, tailored to the selected persona."),
 });
 export type PersonaBasedAIChatOutput = z.infer<typeof PersonaBasedAIChatOutputSchema>;
 
-export async function personaBasedAIChat(input: PersonaBasedAIChatInput): Promise<PersonaBasedAIChatOutput> {
+// For now we hardcode the backend URL used by Mukoma.ai (Render backend)
+const MUKOMA_BACKEND_URL = 'https://mukomaai-backend.onrender.com/mukoma-ai';
+
+export async function personaBasedAIChat(
+  input: PersonaBasedAIChatInput
+): Promise<PersonaBasedAIChatOutput> {
   return personaBasedAIChatFlow(input);
 }
 
@@ -35,19 +47,53 @@ const personaBasedAIChatFlow = ai.defineFlow(
     outputSchema: PersonaBasedAIChatOutputSchema,
   },
   async (input) => {
-    const persona = personas.find(p => p.id === input.selectedPersona);
+    const persona = personas.find((p) => p.id === input.selectedPersona);
     if (!persona) {
       throw new Error(`Persona with id "${input.selectedPersona}" not found.`);
     }
-    const systemPrompt = persona.systemPrompt;
 
-    const finalPrompt = `${systemPrompt}\n\nUser language: ${input.language}\n\nUser: ${input.message}`;
+    // NEW: Load user preferences from Firestore
+    const userRef = doc(db, "users", input.userId);
+    const userSnap = await getDoc(userRef);
 
-    const { output } = await ai.generate({
-      prompt: finalPrompt,
-      model: 'googleai/gemini-2.5-flash',
+    let userDefaultPersona = null;
+    let userDefaultLanguage = null;
+
+    if (userSnap.exists()) {
+      const userData = userSnap.data();
+      userDefaultPersona = userData.defaultPersona ?? null;
+      userDefaultLanguage = userData.language ?? null;
+    }
+
+    // NEW: Persona + language fallback logic
+    const payload = {
+      message: input.message,
+      persona: userDefaultPersona || input.selectedPersona,
+      language: userDefaultLanguage || input.language,
+    };
+
+    // Backend call stays the same
+    const res = await fetch(MUKOMA_BACKEND_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
 
-    return { response: output?.text ?? 'Sorry, I could not generate a response.' };
+    if (!res.ok) {
+      console.error('Mukoma backend error status:', res.status);
+      throw new Error(`Mukoma.ai backend returned ${res.status}`);
+    }
+
+    const data = await res.json().catch((err) => {
+      console.error('Failed to parse Mukoma backend JSON:', err);
+      throw new Error('Invalid JSON from Mukoma.ai backend');
+    });
+
+    const reply =
+      data?.reply ??
+      data?.response ??
+      'Sorry, something went wrong talking to Mukoma.ai backend.';
+
+    return { response: reply };
   }
 );
