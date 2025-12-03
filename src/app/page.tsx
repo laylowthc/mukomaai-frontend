@@ -36,8 +36,15 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <header className="container mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         <div className="flex items-center gap-2">
-           <Bot className="h-8 w-8 text-primary" />
-          <h1 className="text-2xl font-bold font-headline">MukomaAI</h1>
+          <div className="relative h-12 w-40">
+            <Image
+              src="/logo.png"
+              alt="MukomaAI Logo"
+              fill
+              className="object-contain"
+              priority
+            />
+          </div>
         </div>
         <nav className="flex items-center gap-4">
           <Button variant="ghost" asChild>
@@ -70,9 +77,9 @@ export default function Home() {
         </section>
 
         <section className="relative container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-           <div className="relative aspect-[16/9] w-full max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl">
+          <div className="relative aspect-[16/9] w-full max-w-5xl mx-auto rounded-2xl overflow-hidden shadow-2xl">
             {heroImage && (
-              <Image 
+              <Image
                 src={heroImage.imageUrl}
                 alt={heroImage.description}
                 fill
