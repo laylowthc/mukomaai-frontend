@@ -16,8 +16,9 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { Bot, LogOut, MessageSquare, MessageSquarePlus, Settings, ShoppingCart, User } from 'lucide-react';
+import { LogOut, MessageSquare, MessageSquarePlus, Settings, ShoppingCart, User } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { Chat } from '@/lib/types';
@@ -27,7 +28,7 @@ export function AppSidebar() {
   const auth = useAuth();
   const firestore = useFirestore();
   const pathname = usePathname();
-  
+
   const chatsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(collection(firestore, 'users', user.uid, 'chats'), orderBy('createdAt', 'desc'));
@@ -41,41 +42,41 @@ export function AppSidebar() {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
-  
+
   const renderUserProfile = () => {
     if (isGuest) {
       return (
         <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-                <Link href="/auth">
-                    <User />
-                    <span>Sign Up / Sign In</span>
-                </Link>
-            </SidebarMenuButton>
+          <SidebarMenuButton asChild>
+            <Link href="/auth">
+              <User />
+              <span>Sign Up / Sign In</span>
+            </Link>
+          </SidebarMenuButton>
         </SidebarMenuItem>
       )
     }
 
     return (
-        <>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/profile">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user?.photoURL ?? ''} />
-                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
-                  </Avatar>
-                  <span>{user?.displayName || 'Profile'}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={() => auth.signOut()}>
-                <LogOut />
-                Logout
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-        </>
+      <>
+        <SidebarMenuItem>
+          <SidebarMenuButton asChild>
+            <Link href="/profile">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.photoURL ?? ''} />
+                <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+              </Avatar>
+              <span>{user?.displayName || 'Profile'}</span>
+            </Link>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+        <SidebarMenuItem>
+          <SidebarMenuButton onClick={() => auth.signOut()}>
+            <LogOut />
+            Logout
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </>
     )
   }
 
@@ -89,7 +90,14 @@ export function AppSidebar() {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
-            <Bot className="h-8 w-8 text-primary" />
+            <div className="relative h-8 w-8">
+              <Image
+                src="/logo.png"
+                alt="MukomaAI Logo"
+                fill
+                className="object-contain"
+              />
+            </div>
             <span className="text-xl font-semibold">MukomaAI</span>
           </div>
         </SidebarHeader>
