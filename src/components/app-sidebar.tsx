@@ -89,7 +89,7 @@ export function AppSidebar() {
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-2">
-            <div className="relative h-12 w-40">
+            <div className="relative h-12 w-56">
               <Image
                 src="/logo.png"
                 alt="MukomaAI Logo"
